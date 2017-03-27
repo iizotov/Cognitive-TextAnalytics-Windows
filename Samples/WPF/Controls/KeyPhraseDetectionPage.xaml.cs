@@ -26,7 +26,7 @@ namespace Microsoft.ProjectOxford.Text.Controls
     {
         #region Fields
 
-        public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register("Description", typeof(string), typeof(SentimentAnalysisPage));
+        public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register("Description", typeof(string), typeof(KeyPhraseDetectionPage));
 
         private string _keyPhrases;
         private string _inputText;

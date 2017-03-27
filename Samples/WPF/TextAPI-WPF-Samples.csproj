@@ -35,6 +35,14 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory, Version=2.28.4.987, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.IdentityModel.Clients.ActiveDirectory.2.28.4\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
+    <Reference Include="Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms, Version=2.28.4.987, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>packages\Microsoft.IdentityModel.Clients.ActiveDirectory.2.28.4\lib\net45\Microsoft.IdentityModel.Clients.ActiveDirectory.WindowsForms.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="Microsoft.ProjectOxford.Text, Version=1.0.1.33572, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>packages\Microsoft.ProjectOxford.Text.1.0.1.33572\lib\net452\Microsoft.ProjectOxford.Text.dll</HintPath>
       <Private>True</Private>
@@ -45,6 +53,11 @@
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Data.Entity.Design" />
+    <Reference Include="System.IdentityModel" />
+    <Reference Include="System.Web" />
+    <Reference Include="System.Web.Extensions" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -79,6 +92,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Controls\WorkPage.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -99,6 +116,10 @@
     <Compile Include="Controls\TopicDetectionPage.xaml.cs">
       <DependentUpon>TopicDetectionPage.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Controls\WorkPage.xaml.cs">
+      <DependentUpon>WorkPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Helpers\ClipboardManager.cs" />
     <Compile Include="Helpers\RandomText.cs" />
     <Compile Include="Helpers\SamplePhrase.cs" />
     <Compile Include="Helpers\Sentiment.cs" />

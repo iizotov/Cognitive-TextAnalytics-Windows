@@ -22,11 +22,11 @@ namespace Microsoft.ProjectOxford.Text.Controls
     /// <summary>
     /// Interaction logic for TopicDetectionPage.xaml
     /// </summary>
-    public partial class TopicDetectionPage : Page, INotifyPropertyChanged
+    public partial class WorkPage : Page, INotifyPropertyChanged
     {
         #region Fields
 
-        public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register("Description", typeof(string), typeof(TopicDetectionPage));
+        public static readonly DependencyProperty DescriptionProperty = DependencyProperty.Register("Description", typeof(string), typeof(WorkPage));
 
         private string _topics;
         private string _inputText;
@@ -35,7 +35,7 @@ namespace Microsoft.ProjectOxford.Text.Controls
 
         #region Constructors
 
-        public TopicDetectionPage()
+        public WorkPage()
         {
             InitializeComponent();
         }
@@ -88,7 +88,7 @@ namespace Microsoft.ProjectOxford.Text.Controls
         public string InputText
         {
             get
-            {
+            {  
                 return _inputText;
             }
             set
