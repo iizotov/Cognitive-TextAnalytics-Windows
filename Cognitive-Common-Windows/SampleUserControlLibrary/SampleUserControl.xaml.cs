@@ -32,11 +32,15 @@
 // 
 
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Net;
+using System.Text.RegularExpressions;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
+using System.Windows.Documents;
+using System.Windows.Media;
 
 namespace SampleUserControlLibrary
 {
@@ -139,14 +143,95 @@ namespace SampleUserControlLibrary
         {
             if (String.IsNullOrEmpty(logMessage) || logMessage == "\n")
             {
-                _ttsTextBox.Text += "\n";
+                _ttsTextBox.AppendText("\n");
 
             }
             else
             {
-                _ttsTextBox.Text += (logMessage + ' ');
+                _ttsTextBox.AppendText(logMessage + " ");
             }
             _ttsTextBox.ScrollToEnd();
+            //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
+        }
+
+        private List<TextRange> FindWordFromPosition(TextPointer position, string word)
+        {
+            List <TextRange> outVar = new List<TextRange>();
+            while (position != null)
+            {
+                if (position.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
+                {
+                    string textRun = position.GetTextInRun(LogicalDirection.Forward);
+
+                    // Find the starting index of any substring that matches "word".
+                    //int indexInRun = textRun.IndexOf(word);
+                    MatchCollection matches = Regex.Matches(textRun, word);
+                    foreach (Match match in matches)
+                    {
+                        if (match.Index >= 0)
+                        {
+                            TextPointer start = position.GetPositionAtOffset(match.Index);
+                            TextPointer end = start.GetPositionAtOffset(word.Length);
+                            outVar.Add(new TextRange(start, end));
+                            //return new TextRange(start, end);
+                        }
+                    }
+                }
+
+                position = position.GetNextContextPosition(LogicalDirection.Forward);
+            }
+
+            // position will be null if "word" is not found.
+            return outVar;
+        }
+
+        public void HighlightWords(List<string> words)
+        {
+            TextPointer text = _ttsTextBox.Document.ContentStart;
+            while (text.GetPointerContext(LogicalDirection.Forward) != TextPointerContext.Text)
+            {
+                text = text.GetNextContextPosition(LogicalDirection.Forward);
+
+
+                foreach (string word in words)
+                {
+                    //MatchCollection matches = Regex.Matches(new TextRange(text.DocumentStart, _ttsTextBox.Document.ContentEnd).Text, word);
+                    //foreach (Match match in matches)
+                    {
+
+
+                        //var start = _ttsTextBox.Document.ContentStart;
+                        //var startPos = text.GetPositionAtOffset(match.Index);
+                        //var endPos = text.GetPositionAtOffset(match.Index + match.Length);
+                        //var textRange = new TextRange(startPos, endPos);
+                        foreach (TextRange textRange in FindWordFromPosition(text, word))
+                        {
+                            textRange.ApplyPropertyValue(TextElement.BackgroundProperty, new SolidColorBrush(Colors.Yellow));
+                            textRange.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Bold);
+                        }
+
+                    }
+                }
+
+            }
+
+            //Apply color to all matching text
+            /*foreach (string word in words)
+            {
+                MatchCollection matches = Regex.Matches(new TextRange(_ttsTextBox.Document.ContentStart, _ttsTextBox.Document.ContentEnd).Text, word);
+                foreach (Match match in matches)
+                {
+                    
+                    
+                    var start = _ttsTextBox.Document.ContentStart;
+                    var startPos = start.GetPositionAtOffset(match.Index + 2);
+                    var endPos = start.GetPositionAtOffset(match.Index + 2 + match.Length);
+                    var textRange = new TextRange(startPos, endPos);
+                    textRange.ApplyPropertyValue(TextElement.BackgroundProperty, new SolidColorBrush(Colors.Yellow));
+                    textRange.ApplyPropertyValue(TextElement.FontWeightProperty, FontWeights.Bold);
+                    
+                }
+            }*/
         }
 
         public void LogSentiment(string logMessage)
@@ -196,7 +281,7 @@ namespace SampleUserControlLibrary
             _logTextBox.Text = "";
             _keyWordsTextBox.Text = "";
             _sentimentTextBox.Text = "";
-            _ttsTextBox.Text = "";
+            _ttsTextBox.Document.Blocks.Clear();
             _topicTextBox.Text = "";
         }
 

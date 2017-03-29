@@ -30,6 +30,7 @@ using Microsoft.ProjectOxford.Text.Sentiment;
 using Microsoft.ProjectOxford.Text.KeyPhrase;
 using Newtonsoft.Json;
 using System.Data.Entity.Design.PluralizationServices;
+using Microsoft.Cognitive.LUIS;
 
 namespace Microsoft.ProjectOxford.Text
 {
@@ -100,7 +101,11 @@ namespace Microsoft.ProjectOxford.Text
 
         private string sentimentUrl = "https://api.powerbi.com/beta/72f988bf-86f1-41af-91ab-2d7cd011db47/datasets/a6540be2-a8b2-4b68-a0d9-69117fdb68a5/rows?key=osaQDlM2hUdzzCBJ3JrvghsjJGarSm%2BTTUJz6qcfEsWjjyNh3VXVH0ik7RbVYZ3BDgbkVigV7Xm6uBOCQ1N0lg%3D%3D";
 
-        private string appId = "820450be-2296-4123-afdb-9ff5a55daf6e";
+        private string powerBIAppId = "820450be-2296-4123-afdb-9ff5a55daf6e";
+        private string luisSubscriptionKey = "2a9c536b2356498ba88f21bfc76da65a";
+        private string luisAppId = "7afc5a10-5e94-4d7b-8a30-64dd2a7db4b7";
+        private LuisResult prevResult { get; set; }
+
         private string sentimentDatasetName = "_TextAPISentiment";
         private string keywordDatasetName = "_TextAPIKeywords";
 
@@ -109,6 +114,7 @@ namespace Microsoft.ProjectOxford.Text
 
         private string keyPhrasesString = "";
         private Dictionary<string, int> keyPhrasesDict = new Dictionary<string, int>();
+        private List<string> keyPhrasesList = new List<string>();
 
         private PluralizationService ps = PluralizationService.CreateService(new CultureInfo("en-us"));
         private static string testText = 
@@ -132,6 +138,7 @@ namespace Microsoft.ProjectOxford.Text
 
                     //LUIS - in the top left corner, popping up the window / push message
                     //Add highlights as the text is spoken
+                    //Load test
 
                     Detect_Key_Phrases(this.lastMessage);
 
@@ -150,9 +157,9 @@ namespace Microsoft.ProjectOxford.Text
 
 
                 }
-                catch
+                catch (Exception ex)
                 {
-
+                    Log(ex.Message);
                 }
             }
         }
@@ -190,6 +197,13 @@ namespace Microsoft.ProjectOxford.Text
 
                 var keyPhrases = new StringBuilder();
 
+                //add only new phrases
+                keyPhrasesList.AddRange(response.Documents[0].KeyPhrases.Where(x => !keyPhrasesList.Any(y => y == x)));
+
+                //((MainWindow)Application.Current.MainWindow)._scenariosControl.HighlightWords(keyPhrasesList);
+                ((MainWindow)Application.Current.MainWindow)._scenariosControl.HighlightWords(response.Documents[0].KeyPhrases);
+
+
                 foreach (var keyPhrase in response.Documents[0].KeyPhrases.ConvertAll(d => ps.Singularize(d.ToLower())))
                 {
                     if (keyPhrase.Trim() != "")
@@ -211,8 +225,14 @@ namespace Microsoft.ProjectOxford.Text
 
                 ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogKeywords(keyPhrasesString);
 
-                string json = JsonConvert.SerializeObject(deltaPhrasesDict.Select(e => new { keyword = e.Key, frequency = e.Value, dt = (DateTime.UtcNow.ToString("s") + "Z") }));
-                post(keywordUrl, json);
+
+                if (sendToPBICheckbox.IsChecked == true)
+                {
+                    string json = JsonConvert.SerializeObject(deltaPhrasesDict.Select(e => new { keyword = e.Key, frequency = e.Value, dt = (DateTime.UtcNow.ToString("s") + "Z") }));
+                    //post(keywordUrl, json);
+                    Thread myNewThread = new Thread(() => post(keywordUrl, json));
+                    myNewThread.Start();
+                }
             }
             catch (Exception ex)
             {
@@ -242,8 +262,13 @@ namespace Microsoft.ProjectOxford.Text
                 var fullScore = response.Documents[1].Score * 100;
                 ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogSentiment(string.Format("Full: {0}%\nLast {1} sentences: {2}%", fullScore, SENTENCE_LIMIT, score));
 
-                string json = JsonConvert.SerializeObject(new { dt = (DateTime.UtcNow.ToString("s") + "Z"), sentence = text, sentiment_Nlast = score, average_sentiment = fullScore });
-                post(sentimentUrl, "[" + json + "]");
+                if (sendToPBICheckbox.IsChecked == true)
+                {
+                    //post(sentimentUrl, "[" + json + "]");
+                    string json = JsonConvert.SerializeObject(new { dt = (DateTime.UtcNow.ToString("s") + "Z"), sentence = text, sentiment_Nlast = score, average_sentiment = fullScore });
+                    Thread myNewThread = new Thread(() => post(sentimentUrl, "[" + json + "]"));
+                    myNewThread.Start();
+                }
 
             }
             catch (Exception ex)
@@ -252,7 +277,7 @@ namespace Microsoft.ProjectOxford.Text
             }
         }
 
-        static void post(string url, string jsonContent)
+        private static void post(string url, string jsonContent)
         {
             var webRequest = WebRequest.Create(url);
             webRequest.Method = "POST";
@@ -280,7 +305,7 @@ namespace Microsoft.ProjectOxford.Text
 
             //The client id that Azure AD creates when you register your client app.  
             //  To learn how to register a client app, see https://msdn.microsoft.com/en-US/library/dn877542(Azure.100).aspx           
-            string clientID = appId;
+            string clientID = powerBIAppId;
 
             //RedirectUri you used when you register your app.  
             //For a client app, a redirect uri gives Azure AD more details on the application that it will authenticate.  
@@ -338,7 +363,7 @@ namespace Microsoft.ProjectOxford.Text
 
             //The client id that Azure AD creates when you register your client app.  
             //  To learn how to register a client app, see https://msdn.microsoft.com/en-US/library/dn877542(Azure.100).aspx    
-            string clientID = appId;
+            string clientID = powerBIAppId;
 
             //Assuming you have a dataset named SalesMarketing  
             // To get a dataset id, see Get Datasets operation.             
@@ -393,6 +418,90 @@ namespace Microsoft.ProjectOxford.Text
                     
                 }
             }
+        }
+
+        private void btnReply_Click(object sender, RoutedEventArgs e)
+        {
+            if (prevResult == null || (prevResult.DialogResponse != null
+                && prevResult.DialogResponse.Status == "Finished"))
+            {
+                Log("There is nothing to reply to.");
+                return;
+            }
+            try
+            {
+                Reply();
+            }
+            catch (Exception exception)
+            {
+                Log(exception.Message);
+            }
+        }
+
+        public async void Predict()
+        {
+            string appId = luisAppId;
+            string subscriptionKey = luisSubscriptionKey;
+            bool preview = true;
+            string textToPredict = txtPredict.Text;
+            string forceSetParameterName = "";
+            try
+            {
+                LuisClient client = new LuisClient(appId, subscriptionKey, preview);
+                LuisResult res = await client.Predict(textToPredict);
+                processRes(res);
+                Log("Predicted successfully.");
+            }
+            catch (System.Exception exception)
+            {
+                Log(exception.Message);
+            }
+        }
+
+        public async void Reply()
+        {
+            string appId = luisAppId;
+            string subscriptionKey = luisSubscriptionKey;
+            bool preview = true;
+            string textToPredict = txtPredict.Text;
+            string forceSetParameterName = txtForceSet.Text;
+            try
+            {
+                LuisClient client = new LuisClient(appId, luisSubscriptionKey, preview);
+                LuisResult res = await client.Reply(prevResult, textToPredict, forceSetParameterName);
+                processRes(res);
+                Log("Replied successfully.");
+            }
+            catch (System.Exception exception)
+            {
+                Log(exception.Message);
+            }
+        }
+
+        private void processRes(LuisResult res)
+        {
+            /*txtPredict.Text = "";
+            prevResult = res;
+            queryTextBlock.Text = res.OriginalQuery;
+            topIntentTextBlock.Text = res.TopScoringIntent.Name;
+            List<string> entitiesNames = new List<string>();
+            var entities = res.GetAllEntities();
+            foreach (Entity entity in entities)
+            {
+                entitiesNames.Add(entity.Name);
+            }
+            entitiesListBox.ItemsSource = entitiesNames;
+            if (res.DialogResponse != null)
+            {
+                if (res.DialogResponse.Status != "Finished")
+                {
+                    dialogTextBlock.Text = res.DialogResponse.Prompt;
+                }
+                else
+                {
+                    dialogTextBlock.Text = "Finished";
+                }
+            }*/
         }
 
         public class Datasets
