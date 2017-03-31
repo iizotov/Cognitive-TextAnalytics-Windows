@@ -42,12 +42,12 @@
             </ListBox>
         </StackPanel>
         <Frame x:Name="_scenarioFrame" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" NavigationUIVisibility="Hidden" FontWeight="Bold" FontSize="18.667" Padding="0, 5, 0, 5"></Frame>
-        <TextBox x:Name="_topicTextBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
+        <TextBox x:Name="_luis2TextBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
             <TextBox.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
             </TextBox.Background>
         </TextBox>
-        <TextBox x:Name="_somethingElseTextBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="1" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
+        <TextBox x:Name="_luisTextBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="1" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
             <TextBox.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
             </TextBox.Background>

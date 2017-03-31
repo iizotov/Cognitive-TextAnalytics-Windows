@@ -103,7 +103,7 @@ namespace Microsoft.ProjectOxford.Text
 
         private string powerBIAppId = "820450be-2296-4123-afdb-9ff5a55daf6e";
         private string luisSubscriptionKey = "2a9c536b2356498ba88f21bfc76da65a";
-        private string luisAppId = "7afc5a10-5e94-4d7b-8a30-64dd2a7db4b7";
+        private string luisAppId = "57c5fb6d-ffde-4eeb-8411-a6e3e3e1b345";
         private LuisResult prevResult { get; set; }
 
         private string sentimentDatasetName = "_TextAPISentiment";
@@ -141,6 +141,7 @@ namespace Microsoft.ProjectOxford.Text
                     //Load test
 
                     Detect_Key_Phrases(this.lastMessage);
+                    Predict(this.lastMessage);
 
                     //add accumulators - sent after there's been N sentences
                     if (sentenceCount < SENTENCE_LIMIT)
@@ -430,7 +431,7 @@ namespace Microsoft.ProjectOxford.Text
             }
             try
             {
-                Reply();
+                //Reply();
             }
             catch (Exception exception)
             {
@@ -438,17 +439,15 @@ namespace Microsoft.ProjectOxford.Text
             }
         }
 
-        public async void Predict()
+        public async void Predict(string text)
         {
             string appId = luisAppId;
             string subscriptionKey = luisSubscriptionKey;
             bool preview = true;
-            string textToPredict = txtPredict.Text;
-            string forceSetParameterName = "";
             try
             {
                 LuisClient client = new LuisClient(appId, subscriptionKey, preview);
-                LuisResult res = await client.Predict(textToPredict);
+                LuisResult res = await client.Predict(text);
                 processRes(res);
                 Log("Predicted successfully.");
             }
@@ -458,17 +457,15 @@ namespace Microsoft.ProjectOxford.Text
             }
         }
 
-        public async void Reply()
+        public async void Reply(string text)
         {
             string appId = luisAppId;
             string subscriptionKey = luisSubscriptionKey;
             bool preview = true;
-            string textToPredict = txtPredict.Text;
-            string forceSetParameterName = txtForceSet.Text;
             try
             {
                 LuisClient client = new LuisClient(appId, luisSubscriptionKey, preview);
-                LuisResult res = await client.Reply(prevResult, textToPredict, forceSetParameterName);
+                LuisResult res = await client.Reply(prevResult, text);
                 processRes(res);
                 Log("Replied successfully.");
             }
@@ -480,28 +477,34 @@ namespace Microsoft.ProjectOxford.Text
 
         private void processRes(LuisResult res)
         {
-            /*txtPredict.Text = "";
+            
             prevResult = res;
-            queryTextBlock.Text = res.OriginalQuery;
-            topIntentTextBlock.Text = res.TopScoringIntent.Name;
+            //((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis(res.OriginalQuery);
+            ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis(res.TopScoringIntent.Name);
             List<string> entitiesNames = new List<string>();
             var entities = res.GetAllEntities();
             foreach (Entity entity in entities)
             {
                 entitiesNames.Add(entity.Name);
+                ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2(entity.Name + ":" + entity.Value);
+
             }
-            entitiesListBox.ItemsSource = entitiesNames;
+
             if (res.DialogResponse != null)
             {
                 if (res.DialogResponse.Status != "Finished")
                 {
-                    dialogTextBlock.Text = res.DialogResponse.Prompt;
+                    ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2(res.DialogResponse.Prompt);
+
+                    //dialogTextBlock.Text = res.DialogResponse.Prompt;
                 }
                 else
                 {
-                    dialogTextBlock.Text = "Finished";
+                    ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2("Finished");
+
+                    //dialogTextBlock.Text = "Finished";
                 }
-            }*/
+            }
         }
 
         public class Datasets

@@ -154,6 +154,35 @@ namespace SampleUserControlLibrary
             //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
         }
 
+        public void LogLuis(string logMessage)
+        {
+            if (String.IsNullOrEmpty(logMessage) || logMessage == "\n")
+            {
+                _luisTextBox.AppendText("\n");
+
+            }
+            else
+            {
+                _luisTextBox.AppendText(logMessage + " ");
+            }
+            _luisTextBox.ScrollToEnd();
+            //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
+        }
+        public void LogLuis2(string logMessage)
+        {
+            if (String.IsNullOrEmpty(logMessage) || logMessage == "\n")
+            {
+                _luis2TextBox.AppendText("\n");
+
+            }
+            else
+            {
+                _luis2TextBox.AppendText(logMessage + " ");
+            }
+            _luis2TextBox.ScrollToEnd();
+            //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
+        }
+
         private List<TextRange> FindWordFromPosition(TextPointer position, string word)
         {
             List <TextRange> outVar = new List<TextRange>();
@@ -262,19 +291,7 @@ namespace SampleUserControlLibrary
             _keyWordsTextBox.ScrollToEnd();
         }
 
-        public void LogTopic(string logMessage)
-        {
-            if (String.IsNullOrEmpty(logMessage) || logMessage == "\n")
-            {
-                _topicTextBox.Text += "\n";
-
-            }
-            else
-            {
-                _topicTextBox.Text = logMessage;
-            }
-            _topicTextBox.ScrollToEnd();
-        }
+        
 
         public void ClearLog()
         {
@@ -282,7 +299,8 @@ namespace SampleUserControlLibrary
             _keyWordsTextBox.Text = "";
             _sentimentTextBox.Text = "";
             _ttsTextBox.Document.Blocks.Clear();
-            _topicTextBox.Text = "";
+            _luisTextBox.Text = "";
+            _luis2TextBox.Text = "";
         }
 
         private void ScenarioChanged(object sender, SelectionChangedEventArgs e)
