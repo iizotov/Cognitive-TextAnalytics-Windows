@@ -168,24 +168,12 @@ namespace SampleUserControlLibrary
             _luisTextBox.ScrollToEnd();
             //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
         }
-        public void LogLuis2(string logMessage)
-        {
-            if (String.IsNullOrEmpty(logMessage) || logMessage == "\n")
-            {
-                _luis2TextBox.AppendText("\n");
-
-            }
-            else
-            {
-                _luis2TextBox.AppendText(logMessage + " ");
-            }
-            _luis2TextBox.ScrollToEnd();
-            //http://stackoverflow.com/questions/8772308/method-to-search-through-a-richtextbox-and-highlight-all-instances-of-that-speci
-        }
+        
 
         private List<TextRange> FindWordFromPosition(TextPointer position, string word)
         {
             List <TextRange> outVar = new List<TextRange>();
+            //return outVar;
             while (position != null)
             {
                 if (position.GetPointerContext(LogicalDirection.Forward) == TextPointerContext.Text)
@@ -217,9 +205,14 @@ namespace SampleUserControlLibrary
         public void HighlightWords(List<string> words)
         {
             TextPointer text = _ttsTextBox.Document.ContentStart;
+
+            //TextPointer text = _ttsTextBox.Document.ContentEnd.GetPositionAtOffset(-1024);
+
             while (text.GetPointerContext(LogicalDirection.Forward) != TextPointerContext.Text)
             {
                 text = text.GetNextContextPosition(LogicalDirection.Forward);
+               
+                
 
 
                 foreach (string word in words)
@@ -233,6 +226,8 @@ namespace SampleUserControlLibrary
                         //var startPos = text.GetPositionAtOffset(match.Index);
                         //var endPos = text.GetPositionAtOffset(match.Index + match.Length);
                         //var textRange = new TextRange(startPos, endPos);
+
+
                         foreach (TextRange textRange in FindWordFromPosition(text, word))
                         {
                             textRange.ApplyPropertyValue(TextElement.BackgroundProperty, new SolidColorBrush(Colors.Yellow));
@@ -300,7 +295,6 @@ namespace SampleUserControlLibrary
             _sentimentTextBox.Text = "";
             _ttsTextBox.Document.Blocks.Clear();
             _luisTextBox.Text = "";
-            _luis2TextBox.Text = "";
         }
 
         private void ScenarioChanged(object sender, SelectionChangedEventArgs e)

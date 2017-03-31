@@ -42,12 +42,8 @@
             </ListBox>
         </StackPanel>
         <Frame x:Name="_scenarioFrame" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" NavigationUIVisibility="Hidden" FontWeight="Bold" FontSize="18.667" Padding="0, 5, 0, 5"></Frame>
-        <TextBox x:Name="_luis2TextBox" Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
-            <TextBox.Background>
-                <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
-            </TextBox.Background>
-        </TextBox>
-        <TextBox x:Name="_luisTextBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="1" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True">
+
+        <TextBox x:Name="_luisTextBox" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" IsReadOnly="True" FontSize="20">
             <TextBox.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
             </TextBox.Background>
@@ -67,13 +63,13 @@
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
             </TextBox.Background>
         </TextBox>
-        <RichTextBox x:Name="_ttsTextBox" Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="20">
+        <RichTextBox x:Name="_ttsTextBox" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Padding="5" VerticalScrollBarVisibility="Auto" IsReadOnly="True" FontSize="20">
             <RichTextBox.Background>
                 <SolidColorBrush Color="{DynamicResource {x:Static SystemColors.ControlLightColorKey}}"/>
             </RichTextBox.Background>
         </RichTextBox>
         <StackPanel Orientation="Horizontal" Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2" Background="{DynamicResource {x:Static SystemColors.ControlBrushKey}}">
-            <TextBlock x:Name="_disclaimerTextBlock" VerticalAlignment="Center" HorizontalAlignment="Left" TextWrapping="Wrap" Margin="5">Microsoft will receive the images you upload and may use them to improve Face API and related services. By submitting an image, you confirm you have consent from everyone in it.</TextBlock>
+            <TextBlock x:Name="_disclaimerTextBlock" VerticalAlignment="Center" HorizontalAlignment="Left" TextWrapping="Wrap" Margin="5"></TextBlock>
         </StackPanel>
 
     </Grid>

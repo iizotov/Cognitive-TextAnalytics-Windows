@@ -92,12 +92,22 @@ namespace Microsoft.ProjectOxford.Text
             base.OnSourceInitialized(e);
             var windowClipboardManager = new ClipboardManager(this);
             windowClipboardManager.ClipboardChanged += ClipboardChanged;
+            dispatcherTimer.Tick += dispatcherTimer_Tick;
+            dispatcherTimer.Interval = new TimeSpan(0, 0, 0, 0, 500);
         }
+
+        private void dispatcherTimer_Tick(object sender, EventArgs e)
+        {
+            test();
+        }
+
         private string ttsMessage = "";
         private string lastMessage = "";
-        private string lastNMessages = "";
-        private int sentenceCount = 0;
-        private const int SENTENCE_LIMIT = 1;
+        private List<string> lastNMessages = new List<string>();
+        private const int SENTENCE_LIMIT = 5;
+
+        private System.Windows.Threading.DispatcherTimer dispatcherTimer = new System.Windows.Threading.DispatcherTimer();
+
 
         private string sentimentUrl = "https://api.powerbi.com/beta/72f988bf-86f1-41af-91ab-2d7cd011db47/datasets/a6540be2-a8b2-4b68-a0d9-69117fdb68a5/rows?key=osaQDlM2hUdzzCBJ3JrvghsjJGarSm%2BTTUJz6qcfEsWjjyNh3VXVH0ik7RbVYZ3BDgbkVigV7Xm6uBOCQ1N0lg%3D%3D";
 
@@ -109,7 +119,6 @@ namespace Microsoft.ProjectOxford.Text
         private string sentimentDatasetName = "_TextAPISentiment";
         private string keywordDatasetName = "_TextAPIKeywords";
 
-        private string messageUrl = "https://iicallcenterfunctionapp.azurewebsites.net/api/message/";
         private string keywordUrl = "https://api.powerbi.com/beta/72f988bf-86f1-41af-91ab-2d7cd011db47/datasets/6603e099-0265-41ef-a6d2-2b0616b587c8/rows?key=htKJW0r0VcrE7hfSPVlRB%2BsTeNkJykSEc0RB%2FzAZfbaijac5Y0oGKit0MgCTNEaSuFzhpurmJiPG8o7YswaugQ%3D%3D";
 
         private string keyPhrasesString = "";
@@ -134,6 +143,7 @@ namespace Microsoft.ProjectOxford.Text
                 {
                     this.ttsMessage += Clipboard.GetText();
                     this.lastMessage = Clipboard.GetText();
+                    this.lastNMessages.Add(this.lastMessage);
                     ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogTTS(Clipboard.GetText());
 
                     //LUIS - in the top left corner, popping up the window / push message
@@ -144,17 +154,11 @@ namespace Microsoft.ProjectOxford.Text
                     Predict(this.lastMessage);
 
                     //add accumulators - sent after there's been N sentences
-                    if (sentenceCount < SENTENCE_LIMIT)
+                    while(lastNMessages.Count > SENTENCE_LIMIT && SENTENCE_LIMIT > 0)
                     {
-                        lastNMessages += Clipboard.GetText() + ' ';
-                        sentenceCount++;
+                        lastNMessages.RemoveAt(0);
                     }
-                    else
-                    {
-                        Get_Sentiment(this.lastNMessages, this.ttsMessage);
-                        sentenceCount = 1;
-                        lastNMessages = Clipboard.GetText() + ' ';
-                    }
+                    Get_Sentiment(this.lastMessage, String.Join(" ", this.lastNMessages));
 
 
                 }
@@ -241,17 +245,17 @@ namespace Microsoft.ProjectOxford.Text
             }
         }
 
-        private async void Get_Sentiment(string text, string fulltext)
+        private async void Get_Sentiment(string text, string lastNTest)
         {
 
             try
             {
                 var document = new SentimentDocument() { Id = Guid.NewGuid().ToString(), Text = text, Language = "en" };
-                var fullDocument = new SentimentDocument() { Id = Guid.NewGuid().ToString(), Text = fulltext, Language = "en" };
+                var lastNDocument = new SentimentDocument() { Id = Guid.NewGuid().ToString(), Text = lastNTest, Language = "en" };
 
                 var request = new SentimentRequest();
                 request.Documents.Add(document);
-                request.Documents.Add(fullDocument);
+                request.Documents.Add(lastNDocument);
 
                 MainWindow mainWindow = Window.GetWindow(this) as MainWindow;
                 var client = new SentimentClient(mainWindow._scenariosControl.SubscriptionKey);
@@ -260,13 +264,13 @@ namespace Microsoft.ProjectOxford.Text
                 Log("Response: Success. Sentiment analyzed.");
 
                 var score = response.Documents[0].Score * 100;
-                var fullScore = response.Documents[1].Score * 100;
-                ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogSentiment(string.Format("Full: {0}%\nLast {1} sentences: {2}%", fullScore, SENTENCE_LIMIT, score));
+                var lastNScore = response.Documents[1].Score * 100;
+                ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogSentiment(string.Format("Last sentence: {0}%\nLast {1} sentences: {2}%", score, SENTENCE_LIMIT, lastNScore));
 
                 if (sendToPBICheckbox.IsChecked == true)
                 {
                     //post(sentimentUrl, "[" + json + "]");
-                    string json = JsonConvert.SerializeObject(new { dt = (DateTime.UtcNow.ToString("s") + "Z"), sentence = text, sentiment_Nlast = score, average_sentiment = fullScore });
+                    string json = JsonConvert.SerializeObject(new { dt = (DateTime.UtcNow.ToString("s") + "Z"), sentence = text, sentiment_Nlast = score, average_sentiment = lastNScore });
                     Thread myNewThread = new Thread(() => post(sentimentUrl, "[" + json + "]"));
                     myNewThread.Start();
                 }
@@ -477,34 +481,65 @@ namespace Microsoft.ProjectOxford.Text
 
         private void processRes(LuisResult res)
         {
-            
+            string entityValue = "";
+
+            if (res.TopScoringIntent.Score < 0.7 || res.TopScoringIntent.Name == "None")
+            {
+                if (loopTestCheckbox.IsChecked == false)
+                {
+                    return;
+                }
+            }
             prevResult = res;
+            
             //((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis(res.OriginalQuery);
-            ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis(res.TopScoringIntent.Name);
+            ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis("\"" + res.OriginalQuery + "\": LUIS Intent: " + res.TopScoringIntent.Name + ", confidence: " + (res.TopScoringIntent.Score * 100).ToString().Substring(0,4) + "%");
             List<string> entitiesNames = new List<string>();
             var entities = res.GetAllEntities();
             foreach (Entity entity in entities)
             {
                 entitiesNames.Add(entity.Name);
-                ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2(entity.Name + ":" + entity.Value);
-
+                ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis(", " + entity.Name + ": " + entity.Value);
+                entityValue = entity.Value;
             }
-
-            if (res.DialogResponse != null)
+            ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis("\n");
+            switch (res.TopScoringIntent.Name)
             {
-                if (res.DialogResponse.Status != "Finished")
-                {
-                    ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2(res.DialogResponse.Prompt);
-
-                    //dialogTextBlock.Text = res.DialogResponse.Prompt;
-                }
-                else
-                {
-                    ((MainWindow)Application.Current.MainWindow)._scenariosControl.LogLuis2("Finished");
-
-                    //dialogTextBlock.Text = "Finished";
-                }
+                case "New Quote":
+                    if(entityValue.ToLower().Contains("car"))
+                    {
+                        OpenUri("https://www.suncorp.com.au/insurance/car.html");
+                    }
+                    else if (entityValue.ToLower().Contains("house"))
+                    {
+                        OpenUri("https://www.suncorp.com.au/insurance/home/home-and-contents.html");
+                    }
+                    else if (entityValue.ToLower().Contains("insurance"))
+                    {
+                        OpenUri("https://www.suncorp.com.au/insurance/");
+                    }
+                    else
+                    {
+                        OpenUri("https://www.suncorp.com.au/insurance/");
+                    }
+                    break;
+                case "New Complaint":
+                    OpenUri("https://www.suncorp.com.au/insurance/contact-us.html#write");
+                    break;
+                case "New Incident":
+                    OpenUri("https://www.suncorp.com.au/insurance/claims.html#car-insurance");
+                    break;
+                case "Update Contact Details":
+                    OpenUri("https://insurance.suncorp.com.au/usermgmt/public/suncorp/login.jsp?contextType=external&username=string&contextValue=%2Foam&password=sercure_string&challenge_url=https%3A%2F%2Finsurance.suncorp.com.au%2Fusermgmt%2Fpublic%2Fsuncorp%2Flogin.jsp&request_id=-414593964383372649&authn_try_count=0&locale=en_US&resource_url=http%253A%252F%252Finsurance.suncorp.com.au%252Fpss");
+                    break;
+                default:
+                    break;
             }
+        }
+        public static bool OpenUri(string uri)
+        {
+            System.Diagnostics.Process.Start(uri);
+            return true;
         }
 
         public class Datasets
@@ -685,8 +720,7 @@ namespace Microsoft.ProjectOxford.Text
 
             ttsMessage = "";
             lastMessage = "";
-            lastNMessages = "";
-            sentenceCount = 0;
+            lastNMessages.Clear();
             keyPhrasesString = "";
             keyPhrasesDict = new Dictionary<string, int>();
             ((MainWindow)Application.Current.MainWindow)._scenariosControl.ClearLog();
@@ -694,16 +728,44 @@ namespace Microsoft.ProjectOxford.Text
 
         private void testButton_Click(object sender, RoutedEventArgs e)
         {
-
-            if(testIterator < testTextArray.Count())
+            if (loopTestCheckbox.IsChecked == true)
             {
-                Clipboard.SetText(testTextArray[testIterator].Trim() + ". ");
-                testIterator++;
+                if (!dispatcherTimer.IsEnabled)
+                {
+                    dispatcherTimer.Start();
+                    testButton.Content = "Stop Timer";
+
+                }
+                else
+                {
+                    dispatcherTimer.Stop();
+                    testButton.Content = "Test";
+
+                }
             }
             else
             {
-                testIterator = 0;
+                test();
             }
+            //dispatcherTimer.Start();
         }
+
+        private void test()
+        {
+            
+                if (testIterator < testTextArray.Count())
+                {
+                    Clipboard.SetText(testTextArray[testIterator].Trim() + ". ");
+                    testIterator++;
+                }
+                else
+                {
+                    testIterator = 0;
+                }
+
+
+        }
+
+
     }
 }
